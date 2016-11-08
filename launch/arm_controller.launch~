@@ -1,0 +1,17 @@
+<launch>
+	<node
+		pkg = "jl"
+		type = "generate_arm_tf"
+		name = "generate_arm_tf"
+	/>
+	<node
+		pkg = "keyboard"
+		type = "keyboard"
+		name = "keyboard"
+	/>
+	<node
+		pkg = "rviz"
+		type = "rviz"
+		name = "rviz"
+	/>
+</launch>

@@ -1,0 +1,31 @@
+<launch>
+	<node pkg="visp_auto_tracker" type="visp_auto_tracker" name="visp_auto_tracker" 		output="screen">
+   		<param name="model_path" value="$(find visp_auto_tracker)/models" />
+    		<param name="model_name" value="pattern" />
+    		<param name="debug_display" value="True" />
+	      
+    		<remap from="/visp_auto_tracker/camera_info" to="/usb_cam/camera_info_sync"/>
+    		<remap from="/visp_auto_tracker/image_raw" to="/usb_cam/image_mono_sync"/>
+  	</node>
+
+	<node
+		pkg = "image_proc"
+		type = "image_proc"
+		name = "image_proc"
+		ns = "/usb_cam"
+	/>
+	<node
+		pkg = "jl"
+		type = "sync_cam_data"
+		name = "sync_cam_data"
+	/>
+
+	<node name="usb_cam" pkg="usb_cam" type="usb_cam_node" output="screen" >
+    		<param name="video_device" value="/dev/video0" />
+    		<param name="image_width" value="640" />
+    		<param name="image_height" value="480" />
+    		<param name="pixel_format" value="yuyv" />
+    		<param name="camera_frame_id" value="usb_cam" />
+    		<param name="io_method" value="mmap"/>
+  	</node>
+</launch>
