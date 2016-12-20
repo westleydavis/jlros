@@ -3,6 +3,7 @@
 		pkg = "jl"
 		type = "generate_arm_tf"
 		name = "generate_arm_tf"
+		output = "screen"
 	/>
 	<node
 		pkg = "keyboard"
