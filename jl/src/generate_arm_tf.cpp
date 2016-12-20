@@ -22,20 +22,22 @@
 #define RATE_LOOP 0.007                     //timer callback loop rate
 #define BIT_MAX 1023                        //max resolution of servo
 
-#define L1 1.0f                             //Length of Manipulator Link 1
-#define L2 1.0f                             //Length of Manipulator Link 2
-#define L3 0.25f                            //Length of Manipulator Link 3
+#define L1 0.2f                             //Length of Manipulator Link 1
+#define L2 0.2f                             //Length of Manipulator Link 2
+#define L3 0.2f                            //Length of Manipulator Link 3
 #define SERVO0_0 512
-#define SERVO1_0 800
+#define SERVO1_0 221
 #define SERVO2_0 0
-#define SERVO3_0 200
-#define SERVO4_0 512
+#define SERVO3_0 225
+#define SERVO4_0 750
 #define SERVO5_0 512
 #define SERVO_0 512.0f
 #define MANUAL 1
 #define AUTOMATIC 2
+#define CARTESIAN 3
 #define SPEED_SCALE 3
-#define ARM_CAMERA_OFFSET 0.5f              //Offset for autonomous calculation (intersect final link with target and this offset)
+#define CARTESIAN_SPEED_SCALE 0.001
+#define ARM_CAMERA_OFFSET 0.1f              //Offset for autonomous calculation (intersect final link with target and this offset)
 
 // ///////////////////////////// //
 // Devavit-Hartenberg parameters //
@@ -45,7 +47,7 @@
 #define alpha0 M_PI
 #define a0 0
 #define theta1 0
-#define d1 1
+#define d1 0.1f
 
 //Static Base to joint 1 servo (servo0)
 #define alpha1 0
@@ -87,6 +89,7 @@
 #define H_KEY 104
 #define ONE_KEY 49
 #define TWO_KEY 50
+#define THREE_KEY 51
 
 class Arm{
 	public:
@@ -152,6 +155,11 @@ class Arm{
         float a3;                                   //Link 1 Length
         float a4;                                   //Link 2 Length
         float a5;                                   //Link 3 Length
+
+        float x_goal;
+        float y_goal;
+        float z_goal;
+
         int mode;
 
         //servo incremental
@@ -175,7 +183,7 @@ class Arm{
 Arm::Arm(){
 	rc.m_time = ros::Time::now();
     rc.servo0 = SERVO0_0;
-    rc.servo1 = SERVO1_0;
+    rc.servo1 = SERVO1_0 - 512;
     rc.servo2 = SERVO2_0;
     rc.servo3 = SERVO3_0;
     rc.servo4 = SERVO4_0;
@@ -201,14 +209,17 @@ Arm::Arm(){
     QR_pose.pose.orientation.z = 0;
     QR_pose.pose.orientation.w = 0;
 
+    x_goal = 0;
+    y_goal = 0;
+    z_goal = 0;
     mode = MANUAL;
 }
 
 float Arm::servo2angle(int servo){
     float x = (float(servo) - SERVO_0)*(M_PI/2)/SERVO_0;
-	if(x > M_PI/2) return M_PI/2;
-	else if(x < -M_PI/2) return -M_PI/2;
-	else return x;	
+    if(x > M_PI/2) return M_PI/2;
+    else if(x < -M_PI/2) return -M_PI/2;
+    else return x;
 }
 
 int Arm::angle2servo(float angle){
@@ -221,6 +232,7 @@ int Arm::angle2servo(float angle){
 void Arm::timer_cb(const ros::TimerEvent& event){
 
     int scale = SPEED_SCALE;
+    float scale_c = CARTESIAN_SPEED_SCALE;
 
     if(mode == MANUAL){
         rc.servo0 = rc.servo0 + scale*ds0;
@@ -229,26 +241,38 @@ void Arm::timer_cb(const ros::TimerEvent& event){
         rc.servo3 = rc.servo3 + scale*ds3;
         rc.servo4 = rc.servo4 + scale*ds4;
     }
-    else if(mode == AUTOMATIC){
-        try{
-            Li.lookupTransform("Base", "QR", ros::Time(0), T_goal);
+    else if(mode == AUTOMATIC || mode == CARTESIAN){
+        float x_s;
+        float y_s;
+        float z_s;
+
+        if(mode == AUTOMATIC){
+            try{
+                Li.lookupTransform("UAV", "QR", ros::Time(0), T_goal);
+            }
+            catch(tf::TransformException ex){
+                ROS_ERROR("%s", ex.what());
+            }
+            x_s = T_goal.getOrigin().x();
+            y_s = T_goal.getOrigin().y();
+            z_s = T_goal.getOrigin().z();
         }
-        catch(tf::TransformException ex){
-            ROS_ERROR("%s", ex.what());
+        else{
+            x_goal = x_goal + scale_c*ds0;
+            y_goal = y_goal + scale_c*ds1;
+            z_goal = z_goal + scale_c*ds2;
+            x_s = x_goal;
+            y_s = y_goal;
+            z_s = z_goal;
         }
 
-        float x_s = T_goal.getOrigin().x();
-        float y_s = T_goal.getOrigin().y();
-        float z_s = T_goal.getOrigin().z();
         float x = x_s;
         float y = y_s;
-        float z = z_s;
-
-        if(z < 0) z = 0;
+        float z = z_s + d1;
 
         float rho = sqrt(pow(x,2) + pow(y,2) + pow(z,2));
-        float rhoMax = L1 + L2;
-        float rhoMin = 0.1f*L1 + L3;
+        float rhoMax = L1 + L2 + 0.9f*L3;
+        float rhoMin = 0.1f*(L1 + L2);
 
         if(rho > rhoMax){
             x = x*rhoMax/rho;
@@ -262,11 +286,11 @@ void Arm::timer_cb(const ros::TimerEvent& event){
         }
 
         float r = sqrt(pow(x,2) + pow(y,2));
-        float theta_B = atan2(y_s, x_s);
-        float theta_s = atan2(z_s + ARM_CAMERA_OFFSET, r);
+        float theta_B =  -atan2(y, x);
+        float theta_s = atan2(z + ARM_CAMERA_OFFSET, r);
 
-        float a = pow(L3,2) + pow(r,2) + pow(z,2) - 2*L3*(cos(theta_s) + z*(theta_s));
-        float check = a - (pow(L1,2) + pow(L2,2) + sqrt(4*pow(L1,2)*pow(L2,2)));
+        float a = pow(L3,2) + pow(r,2) + pow(z,2) - 2*L3*(r*cos(theta_s) + z*sin(theta_s));
+        float check = 4*pow(L1,2)*a - pow(pow(L2,2) - pow(L1,2) - a,2);
 
         float y11 = 2*L1*(-z + L3*sin(theta_s)) + sqrt(4*pow(L1,2)*a - pow(pow(L2,2) - pow(L1,2) - a,2));
         float y12 = 2*L1*(-z + L3*sin(theta_s)) - sqrt(4*pow(L1,2)*a - pow(pow(L2,2) - pow(L1,2) - a,2));
@@ -276,6 +300,32 @@ void Arm::timer_cb(const ros::TimerEvent& event){
         float y22 = 2*L2*(-z + L3*sin(theta_s)) - sqrt(4*pow(L2,2)*a - pow(pow(L1,2) - pow(L2,2) - a,2));
         float x_2 = 2*L2*(-r + L3*cos(theta_s)) + pow(L1,2) - pow(L2,2) - a;
 
+        if(check > 0){
+            float theta11 = 2*atan2(y11, x_1);
+            float theta12 = 2*atan2(y12, x_1);
+            float theta21 = 2*atan2(y21, x_2);
+            float theta22 = 2*atan2(y22, x_2);
+
+            float ths[4];
+            ths[0] = fmod(theta_B, 2.0f*M_PI);
+            ths[1] = fmod(theta11, 2.0f*M_PI);
+            ths[2] = fmod(-ths[1] + theta22, 2.0f*M_PI);
+            ths[3] = fmod(-ths[1] - ths[2] + theta_s, 2.0f*M_PI);
+
+
+            for(int i = 0; i < 4; i++){
+                if(ths[i] > M_PI) ths[i] = ths[i] - 2*M_PI;
+                else if(ths[i] < -M_PI) ths[i] = ths[i] + 2*M_PI;
+            }
+
+            rc.servo0 = angle2servo(ths[0]);
+            rc.servo1 = angle2servo(- M_PI/2 - ths[1]);
+            rc.servo2 = angle2servo(-ths[2]);
+            rc.servo3 = angle2servo(-ths[3]);
+        }
+    }
+
+    else if(mode == CARTESIAN){
 
 
     }
@@ -401,6 +451,9 @@ void Arm::keydown_cb(const keyboard::KeyConstPtr& keydown){
             break;
         case TWO_KEY:
             mode = AUTOMATIC;
+            break;
+        case THREE_KEY:
+            mode = CARTESIAN;
             break;
 	}	
 }
