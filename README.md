@@ -7,8 +7,6 @@ arbotix_ros
 
 image_pipeline
 
-mavros
-
 ros-keyboard
 
 usb_cam
