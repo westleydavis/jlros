@@ -22,14 +22,14 @@
 #define RATE_LOOP 0.007                     //timer callback loop rate
 #define BIT_MAX 1023                        //max resolution of servo
 
-#define L1 0.2f                             //Length of Manipulator Link 1
-#define L2 0.2f                             //Length of Manipulator Link 2
-#define L3 0.2f                            //Length of Manipulator Link 3
+#define L1 0.160528f                        //Length of Manipulator Link 1
+#define L2 0.160528f                        //Length of Manipulator Link 2
+#define L3 0.160528f                        //Length of Manipulator Link 3
 #define SERVO0_0 512
-#define SERVO1_0 221
-#define SERVO2_0 0
-#define SERVO3_0 225
-#define SERVO4_0 750
+#define SERVO1_0 512
+#define SERVO2_0 512
+#define SERVO3_0 512
+#define SERVO4_0 512
 #define SERVO5_0 512
 #define SERVO_0 512.0f
 #define MANUAL 1
@@ -47,7 +47,7 @@
 #define alpha0 M_PI
 #define a0 0
 #define theta1 0
-#define d1 0.1f
+#define d1 0.13975f
 
 //Static Base to joint 1 servo (servo0)
 #define alpha1 0
@@ -183,11 +183,17 @@ class Arm{
 Arm::Arm(){
 	rc.m_time = ros::Time::now();
     rc.servo0 = SERVO0_0;
-    rc.servo1 = SERVO1_0 - 512;
+    rc.servo1 = SERVO1_0;
     rc.servo2 = SERVO2_0;
     rc.servo3 = SERVO3_0;
     rc.servo4 = SERVO4_0;
     rc.servo5 = SERVO5_0;
+    ds0 = 0;
+    ds1 = 0;
+    ds2 = 0;
+    ds3 = 0;
+    ds4 = 0;
+
 	a3 = L1;
 	a4 = L2;
 	a5 = L3;
@@ -204,10 +210,10 @@ Arm::Arm(){
     QR_pose.pose.position.x = 0;
     QR_pose.pose.position.y = 0;
     QR_pose.pose.position.z = 0;
-    QR_pose.pose.orientation.x = 1;
+    QR_pose.pose.orientation.x = 0;
     QR_pose.pose.orientation.y = 0;
     QR_pose.pose.orientation.z = 0;
-    QR_pose.pose.orientation.w = 0;
+    QR_pose.pose.orientation.w = 1;
 
     x_goal = 0;
     y_goal = 0;
@@ -378,7 +384,7 @@ void Arm::timer_cb(const ros::TimerEvent& event){
 
     TU.setOrigin(tf::Vector3(1,1,1));
     TU.setRotation(qU);
-    TCAM.setOrigin(tf::Vector3(-.1,.2,-.3));
+    TCAM.setOrigin(tf::Vector3(0.10795,0,0.254));
     TCAM.setRotation(qCAM);
     TQR.setOrigin(tf::Vector3(QR_pose.pose.position.x,QR_pose.pose.position.y,QR_pose.pose.position.z));
     TQR.setRotation(tf::Quaternion(QR_pose.pose.orientation.x,QR_pose.pose.orientation.y,QR_pose.pose.orientation.z,QR_pose.pose.orientation.w));
