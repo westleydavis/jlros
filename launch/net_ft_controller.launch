@@ -1,0 +1,13 @@
+<launch>
+	<node
+		pkg = "jl"
+		type = "control_ft_hexa"
+		name = "control_ft_hexa"
+		output = "screen"
+	/>
+	<node
+		pkg = "keyboard"
+		type = "keyboard"
+		name = "keyboard"
+	/>
+</launch>
