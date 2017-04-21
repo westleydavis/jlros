@@ -4,7 +4,7 @@ project(jl)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(catkin REQUIRED COMPONENTS 
+find_package(catkin REQUIRED COMPONENTS
 	roscpp
 	sensor_msgs
 	message_filters
@@ -12,6 +12,7 @@ find_package(catkin REQUIRED COMPONENTS
 	geometry_msgs
 	keyboard
 	message_generation
+	serial
 	tf)
 
 ## System dependencies are found with CMake's conventions
@@ -105,6 +106,8 @@ include_directories(include ${catkin_INCLUDE_DIRS})
 ## Declare a cpp executable
 add_executable(sync_cam_data src/sync_camera_data.cpp)
 add_executable(generate_arm_tf src/generate_arm_tf.cpp)
+add_executable(control_ft_hexa src/ref_contr_ati_ft_sensor.cpp)
+
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
@@ -113,6 +116,8 @@ add_executable(generate_arm_tf src/generate_arm_tf.cpp)
 ## Specify libraries to link a library or executable target against
 target_link_libraries(sync_cam_data ${catkin_LIBRARIES})
 target_link_libraries(generate_arm_tf ${catkin_LIBRARIES})
+target_link_libraries(control_ft_hexa ${catkin_LIBRARIES})
+
 
 #############
 ## Install ##
