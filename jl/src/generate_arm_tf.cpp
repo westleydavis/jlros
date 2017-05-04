@@ -20,18 +20,18 @@
 #include <geometry_msgs/PoseStamped.h>
 
 #define RATE_LOOP 0.007                     //timer callback loop rate
-#define BIT_MAX 1023                        //max resolution of servo
+#define BIT_MAX 4096                        //max resolution of servo
 
 #define L1 0.160528f                        //Length of Manipulator Link 1
 #define L2 0.160528f                        //Length of Manipulator Link 2
 #define L3 0.160528f                        //Length of Manipulator Link 3
-#define SERVO0_0 512
-#define SERVO1_0 512
-#define SERVO2_0 512
-#define SERVO3_0 512
-#define SERVO4_0 512
-#define SERVO5_0 512
-#define SERVO_0 512.0f
+#define SERVO0_0 4096
+#define SERVO1_0 4096
+#define SERVO2_0 4096
+#define SERVO3_0 4096
+#define SERVO4_0 4096
+#define SERVO5_0 4096
+#define SERVO_0 4096.0f
 #define MANUAL 1
 #define AUTOMATIC 2
 #define CARTESIAN 3
@@ -179,7 +179,7 @@ class Arm{
         float servo2angle(int servo);
         int angle2servo(float angle);
 };
-	
+
 Arm::Arm(){
 	rc.m_time = ros::Time::now();
     rc.servo0 = SERVO0_0;
@@ -388,7 +388,7 @@ void Arm::timer_cb(const ros::TimerEvent& event){
     TCAM.setRotation(qCAM);
     TQR.setOrigin(tf::Vector3(QR_pose.pose.position.x,QR_pose.pose.position.y,QR_pose.pose.position.z));
     TQR.setRotation(tf::Quaternion(QR_pose.pose.orientation.x,QR_pose.pose.orientation.y,QR_pose.pose.orientation.z,QR_pose.pose.orientation.w));
-	
+
 	rc.m_time = ros::Time::now();
 
     br.sendTransform(tf::StampedTransform(TU,rc.m_time,"UNIVERSAL","UAV"));
@@ -418,7 +418,7 @@ void Arm::keydown_cb(const keyboard::KeyConstPtr& keydown){
 	switch(x){
 		case Q_KEY:
             ds0 = 1;
-			break;	
+			break;
 		case A_KEY:
             ds0 = -1;
 			break;
@@ -461,7 +461,7 @@ void Arm::keydown_cb(const keyboard::KeyConstPtr& keydown){
         case THREE_KEY:
             mode = CARTESIAN;
             break;
-	}	
+	}
 }
 
 void Arm::keyup_cb(const keyboard::KeyConstPtr& keyup){
@@ -515,5 +515,3 @@ int main(int argc, char **argv){
 		ros::spinOnce();
 	}
 }
-
-
