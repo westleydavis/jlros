@@ -15,11 +15,11 @@
 		type = "rviz"
 		name = "rviz"
 	/>
-	<node 
-		name="arbotix" 
-		pkg="arbotix_python" 
+	<node
+		name="arbotix"
+		pkg="arbotix_python"
 		type="arbotix_driver" output="screen">
-    		<rosparam file="$(find arbotix_python)/arm.yaml" command="load" />
+    		<rosparam file="$(find jl)/arm.yaml" command="load" />
   	</node>
-	
+
 </launch>
