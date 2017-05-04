@@ -35,7 +35,7 @@
 #define MANUAL 1
 #define AUTOMATIC 2
 #define CARTESIAN 3
-#define SPEED_SCALE 3
+#define SPEED_SCALE 30
 #define CARTESIAN_SPEED_SCALE 0.001
 #define ARM_CAMERA_OFFSET 0.1f              //Offset for autonomous calculation (intersect final link with target and this offset)
 
