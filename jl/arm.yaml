@@ -5,9 +5,9 @@ read_rate: 150
 write_rate: 150
 
 joints: {
-    base_joint: {id: 1, max_angle: 200, min_angle: -200},
-    j1: {id: 6, max_angle: 200, min_angle: -200},
-    j2: {id: 7, max_angle: 200, min_angle: -200},
+    base_joint: {id: 1, max_angle: 800, min_angle: -800},
+    j1: {id: 6, max_angle: 800, min_angle: -800},
+    j2: {id: 7, max_angle: 800, min_angle: -800},
 
 }
 controllers: {
