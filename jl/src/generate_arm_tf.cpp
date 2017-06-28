@@ -22,21 +22,21 @@
 #define RATE_LOOP 0.007                     //timer callback loop rate
 #define BIT_MAX 4096                        //max resolution of servo
 
-#define L1 0.160528f                        //Length of Manipulator Link 1
-#define L2 0.160528f                        //Length of Manipulator Link 2
-#define L3 0.160528f                        //Length of Manipulator Link 3
-#define SERVO0_0 4096
-#define SERVO1_0 4096
-#define SERVO2_0 4096
-#define SERVO3_0 4096
-#define SERVO4_0 4096
-#define SERVO5_0 4096
-#define SERVO_0 4096.0f
+#define L1 0.2f                        //Length of Manipulator Link 1
+#define L2 0.2f                        //Length of Manipulator Link 2
+#define L3 0.18f                        //Length of Manipulator Link 3
+#define SERVO0_0 2048
+#define SERVO1_0 2048
+#define SERVO2_0 2048
+#define SERVO3_0 2048
+#define SERVO4_0 2048
+#define SERVO5_0 2048
+#define SERVO_0 2048.0f
 #define MANUAL 1
 #define AUTOMATIC 2
 #define CARTESIAN 3
 #define SPEED_SCALE 3
-#define CARTESIAN_SPEED_SCALE 0.0001
+#define CARTESIAN_SPEED_SCALE 0.001
 #define ARM_CAMERA_OFFSET 0.1f              //Offset for autonomous calculation (intersect final link with target and this offset)
 
 // ///////////////////////////// //
@@ -121,6 +121,7 @@ class Arm{
         tf::Transform T34;                          //link 1 to link 2 Frame Transform
         tf::Transform T45;                          //link 2 to link 3 Frame Transform
         tf::Transform T56;                          //link 3 to wrist Frame Transform
+				tf::Transform TG;
 
         tf::Transform TQR;                          //QR code to Camera Frame Transform
         tf::Transform TCAM;                         //UAV to Camera Frame Transform
@@ -136,6 +137,7 @@ class Arm{
         tf::Quaternion q56;                         //Quaternion associated with link 3 to wrist Frame Transform
 
         tf::Quaternion qCAM;                        //Quaternion associated with UAV to Camera Frame Transform
+				tf::Quaternion qG;
 
         ::jl::jointAngles rc;                       //custom message holding all servo outputs (0-1023)
 
@@ -146,6 +148,7 @@ class Arm{
         std_msgs::Float64 al5;                      //variable servo4 control message
 
         geometry_msgs::PoseStamped QR_pose;         //message from visp_auto_tracker package
+				geometry_msgs::PoseStamped G_pose;
 
         float theta2;                               //variable servo0 control (rad)
         float theta3;                               //variable servo1 control (rad)
@@ -215,9 +218,12 @@ Arm::Arm(){
     QR_pose.pose.orientation.z = 0;
     QR_pose.pose.orientation.w = 1;
 
-    x_goal = 0;
-    y_goal = 0;
-    z_goal = 0;
+    x_goal = 0.3f;
+    y_goal = 0.0f;
+    z_goal = -0.2f;
+		G_pose.pose.position.x = x_goal;
+    G_pose.pose.position.y = y_goal;
+    G_pose.pose.position.z = z_goal;
     mode = MANUAL;
 }
 
@@ -277,8 +283,8 @@ void Arm::timer_cb(const ros::TimerEvent& event){
         float z = z_s + d1;
 
         float rho = sqrt(pow(x,2) + pow(y,2) + pow(z,2));
-        /* float rhoMax = L1 + L2 + 0.9f*L3; /**/
-				float rhoMax = 0.5;
+        float rhoMax = L1 + L2 + 0.9f*L3; /**/
+				/*float rhoMax = 0.5; /**/
         float rhoMin = 0.1f*(L1 + L2);
 
         if(rho > rhoMax){
@@ -326,8 +332,8 @@ void Arm::timer_cb(const ros::TimerEvent& event){
             }
 
             rc.servo0 = angle2servo(ths[0]);
-            rc.servo1 = angle2servo(- ths[1]);
-            rc.servo2 = angle2servo(- M_PI/2 -ths[2]);
+            rc.servo1 = angle2servo(- M_PI/2 - ths[1] - 0.146);
+            rc.servo2 = angle2servo(+ M_PI/2 -ths[2]);
             rc.servo3 = angle2servo(-ths[3]);
         }
     }
@@ -361,8 +367,8 @@ void Arm::timer_cb(const ros::TimerEvent& event){
 
 	q01.setRPY(alpha0,0,theta1);
 	q12.setRPY(alpha1,0,theta2);
-    q23.setRPY(alpha2,-M_PI/2 - theta3,0);
-	q34.setRPY(alpha3,0,theta4);
+    q23.setRPY(alpha2,-M_PI/2 - theta3 - 0.146,0);
+	q34.setRPY(alpha3,0,-M_PI/2 + theta4);
 	q45.setRPY(alpha4,0,theta5);
     q56.setRPY(alpha5,0,theta6);
 
@@ -389,10 +395,13 @@ void Arm::timer_cb(const ros::TimerEvent& event){
     TCAM.setRotation(qCAM);
     TQR.setOrigin(tf::Vector3(QR_pose.pose.position.x,QR_pose.pose.position.y,QR_pose.pose.position.z));
     TQR.setRotation(tf::Quaternion(QR_pose.pose.orientation.x,QR_pose.pose.orientation.y,QR_pose.pose.orientation.z,QR_pose.pose.orientation.w));
+		TG.setOrigin(tf::Vector3(x_goal,y_goal,z_goal));
+		TG.setRotation(tf::Quaternion(0,0,0,1));
 
 	rc.m_time = ros::Time::now();
 
-    br.sendTransform(tf::StampedTransform(TU,rc.m_time,"UNIVERSAL","UAV"));
+  br.sendTransform(tf::StampedTransform(TU,rc.m_time,"UNIVERSAL","UAV"));
+	br.sendTransform(tf::StampedTransform(TG,rc.m_time,"UAV","GOAL"));
 	br.sendTransform(tf::StampedTransform(T01,rc.m_time,"UAV","Base"));
 	br.sendTransform(tf::StampedTransform(T12,rc.m_time,"Base","joint1"));
 	br.sendTransform(tf::StampedTransform(T23,rc.m_time,"joint1","joint2"));
