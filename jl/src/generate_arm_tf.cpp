@@ -35,8 +35,8 @@
 #define MANUAL 1
 #define AUTOMATIC 2
 #define CARTESIAN 3
-#define SPEED_SCALE 30
-#define CARTESIAN_SPEED_SCALE 0.001
+#define SPEED_SCALE 3
+#define CARTESIAN_SPEED_SCALE 0.0001
 #define ARM_CAMERA_OFFSET 0.1f              //Offset for autonomous calculation (intersect final link with target and this offset)
 
 // ///////////////////////////// //
@@ -47,7 +47,7 @@
 #define alpha0 M_PI
 #define a0 0
 #define theta1 0
-#define d1 0.13975f
+#define d1 0
 
 //Static Base to joint 1 servo (servo0)
 #define alpha1 0
@@ -277,7 +277,8 @@ void Arm::timer_cb(const ros::TimerEvent& event){
         float z = z_s + d1;
 
         float rho = sqrt(pow(x,2) + pow(y,2) + pow(z,2));
-        float rhoMax = L1 + L2 + 0.9f*L3;
+        /* float rhoMax = L1 + L2 + 0.9f*L3; /**/
+				float rhoMax = 0.5;
         float rhoMin = 0.1f*(L1 + L2);
 
         if(rho > rhoMax){
@@ -325,8 +326,8 @@ void Arm::timer_cb(const ros::TimerEvent& event){
             }
 
             rc.servo0 = angle2servo(ths[0]);
-            rc.servo1 = angle2servo(- M_PI/2 - ths[1]);
-            rc.servo2 = angle2servo(-ths[2]);
+            rc.servo1 = angle2servo(- ths[1]);
+            rc.servo2 = angle2servo(- M_PI/2 -ths[2]);
             rc.servo3 = angle2servo(-ths[3]);
         }
     }
